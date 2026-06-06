@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Librería Inteligente</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .libro { background: #f4f4f4; padding: 15px; margin: 8px 0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-eliminar { background-color: #dc3545; color: white; width: auto; padding: 5px 10px; margin: 0; font-size: 12px; }
+        .btn-eliminar:hover { background-color: #bd2130; }
+        .cantidad { background: #28a745; color: white; padding: 2px 6px; border-radius: 50%; font-size: 12px; margin-left: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>Añadir Libro</h2>
+    <input type="text" id="titulo" placeholder="Título del libro">
+    <input type="text" id="autor" placeholder="Autor">
+    <input type="number" id="precio" step="0.01" placeholder="Precio">
+    <button onclick="agregarLibro()">Nuevo Libro</button>
+    <h2>Inventario Actual</h2>
+    <div id="lista-libros">Cargando...</div>
+    <script>
+
+        const API_URL = "http://localhost:9090/libros";
+        async function cargarLibros() {
+            const respuesta = await fetch(API_URL);
+            const libros = await respuesta.json();
+            
+            const contenedor = document.getElementById("lista-libros");
+            contenedor.innerHTML = ""; 
+            
+            libros.forEach(libro => {
+                contenedor.innerHTML += `
+                    <div class="libro">
+                        <div>
+                            <strong>${libro.titulo}</strong> - ${libro.autor} ($${libro.precio})
+                            <span class="cantidad">X ${libro.cantidad}</span>
+                        </div>
+                        <button class="btn-eliminar" onclick="eliminarLibro(${libro.ID || libro.id})">borrar</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function agregarLibro() {
+            const titulo = document.getElementById("titulo").value;
+            const autor = document.getElementById("autor").value;
+            const precio = parseFloat(document.getElementById("precio").value);
+
+            if(!titulo || !autor) return alert("Llena los campos");
+
+            const nuevoLibro = { titulo, autor, precio };
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nuevoLibro)
+            });
+
+            document.getElementById("titulo").value = "";
+            document.getElementById("autor").value = "";
+            document.getElementById("precio").value = "";
+            cargarLibros();
+        }
+
+        async function eliminarLibro(id) {
+            await fetch(`${API_URL}?id=${id}`, {
+                method: "DELETE"
+            });
+            cargarLibros();
+        }
+
+        cargarLibros();
+    </script>
+</body>
+</html>
